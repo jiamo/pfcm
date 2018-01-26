@@ -2,7 +2,10 @@ import os
 import inspect
 import functools
 import requests
-from oauth2client.service_account import ServiceAccountCredentials
+import time
+from oauth2client.service_account import (
+    ServiceAccountCredentials,
+)
 import json
 
 
@@ -126,24 +129,25 @@ class AndroidNotification(dict):
     # build this object should not finish
     @autoargs()
     def __init__(self, title=None, body=None, icon=None, color=None, sound=None,
-                 tag=None,
-                 click_action=None, body_loc_key=None, body_loc_args=None,
-                 title_loc_key=None, title_loc_args=None):
+                 tag=None, click_action=None, body_loc_key=None,
+                 body_loc_args=None, title_loc_key=None, title_loc_args=None):
         super().__init__()
 
 
 class WebpushConfig(dict):
-
+    @autoargs()
     def __init__(self, headers=None, data=None, notification=None):
         super().__init__()
 
 
 class WebNotification(dict):
+    @autoargs()
     def __init__(self, title, body, icon):
         super().__init__()
 
 
 class ApnsConfig(dict):
+    @autoargs()
     def __init__(self, headers, payload):
         # payload as json object
         super().__init__()
@@ -152,43 +156,54 @@ class ApnsConfig(dict):
 fsm_scope = 'https://www.googleapis.com/auth/firebase.messaging'
 
 
-def _get_access_token(private_key_file):
-    credentials = ServiceAccountCredentials.from_json_keyfile_name(
-        private_key_file, fsm_scope)
-    access_token_info = credentials.get_access_token()
-    return access_token_info.access_token
-
-
 class FcmAPI(object):
-    """
-    Base class for the pyfcm API wrapper for FCM
-    """
 
     CONTENT_TYPE = "application/json"
     FCM_END_POINT = "https://fcm.googleapis.com/v1/projects/{}/messages:send"
-    # FCM only allows up to 1000 reg ids per bulk message.
     FCM_MAX_RECIPIENTS = 1000
     FCM_LOW_PRIORITY = 'normal'
     FCM_HIGH_PRIORITY = 'high'
+    AUTH2_TOKEN_EXPIRE = 3500  # the stand is 3599 We may get new token early
+    RETRY_TIMES = 5
 
     def __init__(self, project_name, private_file):
         self.project = project_name
         self.private_file = private_file
+        self.fcm_end_point = self.FCM_END_POINT.format(self.project)
+        self.auth2_token = None
+        self.token_begin = None
+        self.update_auth2_token()
+
+    def update_auth2_token(self):
+        credentials = ServiceAccountCredentials.from_json_keyfile_name(
+            self.private_file, fsm_scope)
+        access_token_info = credentials.get_access_token()
+        self.token_begin = time.time()
+        self.auth2_token = access_token_info.access_token
 
     def request_headers(self):
+        check_time = time.time()
+        elapse_seconds = int(check_time - self.token_begin)
+        if elapse_seconds > self.AUTH2_TOKEN_EXPIRE:
+            self.update_auth2_token()
         return {
             "Content-Type": self.CONTENT_TYPE,
-            "Authorization": "Bearer " + _get_access_token(self.private_file)
+            "Authorization": "Bearer " + self.auth2_token
         }
 
-    def do_request(self, payload, timeout, ):
+    def do_request(self, playload, timeout, retry_time=0):
+        if retry_time == self.RETRY_TIMES:
+            raise Exception("retry 5 times")
         response = requests.post(
-            self.FCM_END_POINT.format(self.project),
+            self.fcm_end_point,
             headers=self.request_headers(),
-            data=payload,
+            data=playload,
             timeout=timeout)
-
+        if response.status_code == 401:
+            self.update_auth2_token()
+            return self.do_request(playload, timeout, retry_time=(retry_time + 1))
         return response
+
 
 Priority = ["normal", "high"]
 

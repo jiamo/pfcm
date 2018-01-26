@@ -3,7 +3,6 @@ import os
 import yaml
 import datetime
 
-
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(cur_dir)
 print(parent_dir)
@@ -15,19 +14,18 @@ project_name = config["default"]["project_name"]
 registration_id = config["default"]["one_token"]
 
 
-
 def test_pfcm_send_one_device():
-
     message_title = "one device"
     message_body = "{} body of message".format(datetime.datetime.now())
     fsmapi = FcmAPI(project_name, private_file)
     pfcm = Pfcm(fsmapi)
-    results = pfcm.send_msg(
-        registration_id=registration_id,
-        message_title=message_title,
-        message_body=message_body)
-    for result in results:
-        print(result.content)
+    for i in range(100):
+        results = pfcm.send_msg(
+            registration_id=registration_id,
+            message_title=message_title,
+            message_body=message_body)
+        for result in results:
+            print(result.content)
 
 
 def test_pfcm_send_topic():
