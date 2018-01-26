@@ -16,7 +16,8 @@ with open('changelog.rst') as history_file:
 requirements = [
     'Click>=6.0',
     'google-api-python-client>=1.6.4',
-    'oauth2client>=4.1.2'
+    'oauth2client>=4.1.2',
+    'requests'
 ]
 
 setup_requirements = [
