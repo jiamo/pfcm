@@ -1,0 +1,15 @@
+pip==9.0.1
+bumpversion==0.5.3
+wheel==0.30.0
+watchdog==0.8.3
+flake8==3.4.1
+tox==2.9.1
+coverage==4.4.1
+Sphinx==1.6.4
+cryptography==2.1.1
+PyYAML==3.12
+pytest==3.2.3
+pytest-runner==2.12.1
+google-api-python-client==1.6.4
+oauth2client==4.1.2
+request
