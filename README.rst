@@ -35,17 +35,4 @@ test
         one_token: one_token
         project_name: you project name
 
-* the private key file should be in top dir with filename `service_token.json`
-
-
-upload to pypi
----------
-* the only workflow I have try out is ::
-
-    git commit -m "message"
-    git tag 0.05
-    git push --tags
-    git push origin master
-    # If I change the order the https://travis-ci.org/ give upload error
-
-
+* the private key file should be in top dir with filename ``service_token.json``
