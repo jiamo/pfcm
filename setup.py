@@ -14,10 +14,11 @@ with open('changelog.rst') as history_file:
     history = history_file.read()
 
 requirements = [
-    'Click>=6.0',
+    'click>=6.0',
     'google-api-python-client>=1.6.4',
     'oauth2client>=4.1.2',
-    'requests'
+    'requests',
+    'PyYAML',
 ]
 
 setup_requirements = [
