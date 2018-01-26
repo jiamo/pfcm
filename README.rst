@@ -29,7 +29,7 @@ another python wraper for firebase cloud message
 
 test
 --------
-* you should put config.yml in top dir like
+* you should put config.yml in top dir like ::
 
     default:
         one_token: one_token
