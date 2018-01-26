@@ -29,11 +29,11 @@ another python wraper for firebase cloud message
 
 test
 --------
-    1. you should put config.yml in top dir like
+* you should put config.yml in top dir like
 
     default:
         one_token: one_token
         project_name: you project name
 
-    2. the private key file should be in top dir with filename `service_token.json`
+* the private key file should be in top dir with filename `service_token.json`
 
