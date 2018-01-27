@@ -31,7 +31,7 @@ test_requirements = [
 
 setup(
     name='pfcm',
-    version='0.0.7',
+    version='0.0.8',
     description="another fcm wrapper in python",
     long_description=readme + '\n\n' + history,
     author="jiamo",
