@@ -23,22 +23,8 @@ def test_pfcm_send_one_device():
         results = pfcm.send_msg(
             registration_id=registration_id,
             message_title=message_title,
-            message_body=message_body)
+            message_body=message_body,
+            async=True
+        )
         for result in results:
             print(result)
-
-
-def test_pfcm_send_topic():
-    message_title = "topic"
-    message_body = "{} body of message".format(datetime.datetime.now())
-
-    fsmapi = FcmAPI(project_name, private_file)
-    pfcm = Pfcm(fsmapi)
-    topic = "Global_Topic_Dev"
-    results = pfcm.send_msg(
-        topic=topic,
-        message_title=message_title,
-        message_body=message_body)
-
-    for result in results:
-        print(result)

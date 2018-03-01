@@ -7,6 +7,9 @@ from oauth2client.service_account import (
     ServiceAccountCredentials,
 )
 import json
+import asyncio
+import aiohttp
+import async_timeout
 
 
 def autoargs(*include, **kwargs):
@@ -157,7 +160,6 @@ fsm_scope = 'https://www.googleapis.com/auth/firebase.messaging'
 
 
 class FcmAPI(object):
-
     CONTENT_TYPE = "application/json"
     FCM_END_POINT = "https://fcm.googleapis.com/v1/projects/{}/messages:send"
     FCM_MAX_RECIPIENTS = 1000
@@ -166,9 +168,10 @@ class FcmAPI(object):
     AUTH2_TOKEN_EXPIRE = 3500  # the stand is 3599 We may get new token early
     RETRY_TIMES = 5
 
-    def __init__(self, project_name, private_file):
+    def __init__(self, project_name, private_file, loop=None):
         self.project = project_name
         self.private_file = private_file
+        self.loop = loop or asyncio.get_event_loop()
         self.fcm_end_point = self.FCM_END_POINT.format(self.project)
         self.auth2_token = None
         self.token_begin = None
@@ -201,8 +204,28 @@ class FcmAPI(object):
             timeout=timeout)
         if response.status_code == 401:
             self.update_auth2_token()
-            return self.do_request(playload, timeout, retry_time=(retry_time + 1))
-        return response
+            return self.do_request(playload, timeout,
+                                   retry_time=(retry_time + 1))
+        return response.content.decode()
+
+    async def do_request_async(self, playload, timeout, retry_time=0):
+
+        if retry_time == self.RETRY_TIMES:
+            raise Exception("retry 5 times")
+
+        async with aiohttp.ClientSession() as session:
+            async with async_timeout.timeout(timeout):
+                async with session.post(self.fcm_end_point,
+                                        headers=self.request_headers(),
+                                        data=playload) as response:
+                    status = response.status
+                    response_text = await response.text()
+
+        if status == 401:
+            self.update_auth2_token()
+            return await self.do_request(playload, timeout,
+                                         retry_time=(retry_time + 1))
+        return response_text
 
 
 Priority = ["normal", "high"]
@@ -240,6 +263,7 @@ class Pfcm():
                  apple_headers=None,  # TODO like android explain all args
                  apple_payload=None,  # TODO like android explain all args
                  timeout=5,
+                 async=False,
                  ):
         notification = Notification(
             title=message_title, body=message_body
@@ -320,7 +344,129 @@ class Pfcm():
 
         result_msgs = []
         for playload_json in playloads:
-            result = self.fsmapi.do_request(playload_json, timeout)
+
+            if not async:
+                result = self.fsmapi.do_request(playload_json, timeout)
+            else:
+                result = self.fsmapi.loop.run_until_complete(
+                    self.fsmapi.do_request_async(playload_json, timeout)
+                )
+
+            result_msg = self.parse_result(result)
+            result_msgs.append(result_msg)
+
+        return result_msgs
+
+    async def send_msg_async(self,
+                             registration_id=None,
+                             registration_ids=None,
+                             topic=None,
+                             topic_condition=None,
+                             message_body=None,
+                             message_title=None,
+                             data_message=None,
+                             android_collapse_key=None,
+                             android_time_to_live=None,
+                             android_restricted_package_name=None,
+                             android_priority=False,
+                             android_data_message=None,
+                             android_title=None,
+                             android_body=None,
+                             android_icon=None,
+                             android_color=None,
+                             android_sound=None,
+                             android_tag=None,
+                             android_click_action=None,
+                             android_body_loc_key=None,
+                             android_body_loc_args=None,
+                             android_title_loc_key=None,
+                             android_title_loc_args=None,
+                             apple_headers=None,
+                             # TODO like android explain all args
+                             apple_payload=None,
+                             # TODO like android explain all args
+                             timeout=5,
+                             ):
+        notification = Notification(
+            title=message_title, body=message_body
+        )
+
+        android_nofication = AndroidNotification(
+            title=android_title,
+            body=android_body,
+            icon=android_icon,
+            color=android_color,
+            sound=android_sound,
+            tag=android_tag,
+            click_action=android_click_action,
+            body_loc_key=android_body_loc_key,
+            body_loc_args=android_body_loc_args,
+            title_loc_key=android_title_loc_key,
+            title_loc_args=android_title_loc_args,
+        )
+        android_config = AndroidConfig(
+            collapse_key=android_collapse_key,
+            priority=android_priority,
+            ttl=android_time_to_live,
+            restricted_package_name=android_restricted_package_name,
+            data=android_data_message,
+            notification=android_nofication
+        )
+        apns_config = ApnsConfig(
+            headers=apple_headers,
+            payload=apple_payload,
+        )
+        message = Message(
+            data=data_message,
+            notification=notification,
+            android=android_config,
+            # we don't care webpush
+            apns=apns_config
+        )
+        target_count = len(list(filter(
+            None, [registration_id, registration_ids, topic, topic_condition])))
+
+        if target_count != 1:
+            raise Exception(
+                "only suport one id or many ids or topic or topic condition")
+
+        playloads = []
+        if registration_id:
+            message.token = registration_id
+            playload = Playload(
+                message=message
+            )
+            playload_json = json.dumps(playload)
+            playloads.append(playload_json)
+
+        if registration_ids:
+            for registration_id in registration_ids:
+                message.token = registration_id
+                playload = Playload(
+                    message=message
+                )
+                playload_json = json.dumps(playload)
+                playloads.append(playload_json)
+
+        if topic:
+            message.topic = topic
+            playload = Playload(
+                message=message
+            )
+            playload_json = json.dumps(playload)
+            playloads.append(playload_json)
+
+        if topic_condition:
+            message.condition = topic_condition
+            playload = Playload(
+                message=message
+            )
+            playload_json = json.dumps(playload)
+            playloads.append(playload_json)
+
+        result_msgs = []
+        for playload_json in playloads:
+            result = await self.fsmapi.do_request_async(playload_json, timeout)
             result_msg = self.parse_result(result)
             result_msgs.append(result_msg)
 

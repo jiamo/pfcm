@@ -19,6 +19,7 @@ requirements = [
     'oauth2client>=4.1.2',
     'requests',
     'PyYAML',
+    'aiohttp',
 ]
 
 setup_requirements = [
