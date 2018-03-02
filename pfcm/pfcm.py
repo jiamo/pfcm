@@ -14,7 +14,10 @@ import async_timeout
 
 def autoargs(*include, **kwargs):
     def _autoargs(func):
-        attrs, varargs, varkw, defaults = inspect.getargspec(func)
+        spec = inspect.getfullargspec(func)
+        attrs = spec.args
+        varargs = spec.varargs
+        defaults = spec.defaults
 
         def sieve(attr):
             if kwargs and attr in kwargs['exclude']:
