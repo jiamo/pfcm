@@ -13,8 +13,6 @@ print(config)
 project_name = config["default"]["project_name"]
 registration_id = config["default"]["one_token"]
 
-topic_long = "('fc6cccd4-2e69-11e8-b956-6c96cfd9fac9' in topics) || ('fc6fa774-2e69-11e8-b956-6c96cfd9fac9' in topics) || ('fc7302ac-2e69-11e8-b956-6c96cfd9fac9' in topics) || ('fc747a24-2e69-11e8-b956-6c96cfd9fac9' in topics) || ('fc76060a-2e69-11e8-b956-6c96cfd9fac9' in topics)"
-
 def test_pfcm_send_topic_or():
     message_title = "topic"
     message_body = "{} body of message".format(datetime.datetime.now())
