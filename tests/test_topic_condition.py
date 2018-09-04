@@ -2,6 +2,7 @@ from pfcm.pfcm import Pfcm, FcmAPI
 import os
 import yaml
 import datetime
+import pytest
 
 cur_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(cur_dir)
@@ -31,13 +32,14 @@ def test_pfcm_send_topic_include_not():
         assert not "error" in result
 
 
+@pytest.mark.skip(msg="don't need")
 def test_pfcm_send_topic_include_not2():
     message_title = "topic"
     message_body = "{} body of message".format(datetime.datetime.now())
 
     fsmapi = FcmAPI(project_name, private_file)
     pfcm = Pfcm(fsmapi)
-    topic = "!('test' in topics)"
+    topic = "!('test' in topics) && ('Global_Topic_Dev' in topics)"
     results = pfcm.send_msg(
         topic_condition=topic,
         message_title=message_title,
