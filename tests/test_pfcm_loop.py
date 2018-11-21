@@ -24,7 +24,7 @@ def test_pfcm_send_one_device():
             registration_id=registration_id,
             message_title=message_title,
             message_body=message_body,
-            async=True
+            with_async=True
         )
         for result in results:
             print(result)

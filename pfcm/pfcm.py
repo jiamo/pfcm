@@ -266,7 +266,7 @@ class Pfcm():
                  apple_headers=None,  # TODO like android explain all args
                  apple_payload=None,  # TODO like android explain all args
                  timeout=5,
-                 async=False,
+                 with_async=False,
                  ):
         notification = Notification(
             title=message_title, body=message_body
@@ -348,7 +348,7 @@ class Pfcm():
         result_msgs = []
         for playload_json in playloads:
 
-            if not async:
+            if not with_async:
                 result = self.fsmapi.do_request(playload_json, timeout)
             else:
                 result = self.fsmapi.loop.run_until_complete(
