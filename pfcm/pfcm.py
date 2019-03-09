@@ -178,7 +178,7 @@ class FcmAPI(object):
         self.fcm_end_point = self.FCM_END_POINT.format(self.project)
         self.auth2_token = None
         self.token_begin = None
-        self.update_auth2_token()
+        # self.update_auth2_token() init when we need it
 
     def update_auth2_token(self):
         credentials = ServiceAccountCredentials.from_json_keyfile_name(
@@ -188,6 +188,12 @@ class FcmAPI(object):
         self.auth2_token = access_token_info.access_token
 
     def request_headers(self):
+        if self.auth2_token is None:
+            self.update_auth2_token()
+            return {
+                "Content-Type": self.CONTENT_TYPE,
+                "Authorization": "Bearer " + self.auth2_token
+            }
         check_time = time.time()
         elapse_seconds = int(check_time - self.token_begin)
         if elapse_seconds > self.AUTH2_TOKEN_EXPIRE:
