@@ -171,9 +171,13 @@ class FcmAPI(object):
     AUTH2_TOKEN_EXPIRE = 3500  # the stand is 3599 We may get new token early
     RETRY_TIMES = 5
 
-    def __init__(self, project_name, private_file, loop=None):
+    def __init__(self, project_name, private_file=None,
+                 loop=None, private_json=None):
+        if (not private_file) and (not private_json):
+            raise Exception("must have google credit information")
         self.project = project_name
         self.private_file = private_file
+        self.private_json = private_json
         self.loop = loop or asyncio.get_event_loop()
         self.fcm_end_point = self.FCM_END_POINT.format(self.project)
         self.auth2_token = None
@@ -181,8 +185,15 @@ class FcmAPI(object):
         # self.update_auth2_token() init when we need it
 
     def update_auth2_token(self):
-        credentials = ServiceAccountCredentials.from_json_keyfile_name(
-            self.private_file, fsm_scope)
+        credentials = None
+        if self.private_file:
+            credentials = ServiceAccountCredentials.from_json_keyfile_name(
+                self.private_file, fsm_scope)
+
+        if self.private_json:
+            credentials = ServiceAccountCredentials.from_json_keyfile_dict(
+                self.private_json, fsm_scope)
+
         access_token_info = credentials.get_access_token()
         self.token_begin = time.time()
         self.auth2_token = access_token_info.access_token
